@@ -1,11 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  resendConfirmationEmail,
-  signInAsGuest,
-  signInWithPassword,
-  signUpWithPassword,
-} from "../lib/api";
+import { resendConfirmationEmail, signInWithPassword, signUpWithPassword } from "../lib/api";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -63,19 +58,6 @@ export default function Login() {
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to resend");
       setResendStatus("idle");
-    }
-  }
-
-  async function handleGuest() {
-    setError(null);
-    setLoading(true);
-    try {
-      await signInAsGuest();
-      navigate("/servers");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
-    } finally {
-      setLoading(false);
     }
   }
 
@@ -161,16 +143,6 @@ export default function Login() {
       >
         {mode === "signup" ? "Already have an account? Sign in" : "New here? Create an account"}
       </button>
-
-      <div className="mt-4 border-t border-slate-800 pt-4">
-        <button
-          onClick={handleGuest}
-          disabled={loading}
-          className="w-full rounded-lg bg-slate-800 py-2 font-medium hover:bg-slate-700 disabled:opacity-50"
-        >
-          Continue as guest
-        </button>
-      </div>
     </div>
   );
 }

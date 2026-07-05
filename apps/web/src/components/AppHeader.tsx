@@ -1,11 +1,13 @@
 import { Link, useNavigate } from "react-router-dom";
 import { signOut } from "../lib/api";
 import { useGlobalNotifications } from "../hooks/useGlobalNotifications";
+import { useUnloadGuard } from "../hooks/useUnloadGuard";
 import { NotificationBell } from "./NotificationBell";
 
 export function AppHeader() {
   const navigate = useNavigate();
   useGlobalNotifications();
+  useUnloadGuard();
 
   async function handleSignOut() {
     await signOut();

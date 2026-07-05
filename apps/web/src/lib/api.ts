@@ -44,12 +44,6 @@ export async function signInWithPassword(email: string, password: string) {
   return data;
 }
 
-export async function signInAsGuest() {
-  const { data, error } = await supabase.auth.signInAnonymously();
-  if (error) throw new Error(error.message);
-  return data;
-}
-
 export async function resendConfirmationEmail(email: string) {
   const { error } = await supabase.auth.resend({ type: "signup", email });
   if (error) throw new Error(error.message);
