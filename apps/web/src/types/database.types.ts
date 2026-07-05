@@ -134,3 +134,10 @@ export interface BattleReport {
   outcome: BattleOutcome | null;
   created_at: string;
 }
+
+export interface ShopItem {
+  key: string;
+  name: string;
+  cost_gold: number;
+  shield_hours: number;
+}

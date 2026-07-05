@@ -43,6 +43,9 @@ export default function KingdomView() {
           <Link to={`/leaderboard/${kingdom.server_id}?mine=${kingdom.id}`} className="text-emerald-400 hover:underline">
             View leaderboard →
           </Link>
+          <Link to={`/shop/${kingdom.id}`} className="text-slate-400 hover:underline">
+            Shop →
+          </Link>
           <Link to={`/battles/${kingdom.id}`} className="text-slate-400 hover:underline">
             Battle reports →
           </Link>

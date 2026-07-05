@@ -6,6 +6,7 @@ import type {
   Kingdom,
   LeaderboardEntry,
   Server,
+  ShopItem,
   Troop,
   TroopKey,
   TroopOrder,
@@ -177,4 +178,18 @@ export async function fetchBattleReports(kingdomId: string): Promise<BattleRepor
       .order("created_at", { ascending: false })
       .limit(50)
   );
+}
+
+// ===== Shop =====
+
+export async function fetchShopItems(): Promise<ShopItem[]> {
+  return unwrap(await supabase.from("shop_items").select("*"));
+}
+
+export async function buyShield(kingdomId: string, itemKey = "shield_24h"): Promise<void> {
+  const { error } = await supabase.rpc("buy_shield", {
+    p_kingdom_id: kingdomId,
+    p_item_key: itemKey,
+  });
+  if (error) throw new Error(error.message);
 }
