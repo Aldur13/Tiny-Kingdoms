@@ -1,11 +1,11 @@
--- Seeds the 100 server/world instances and the static balance tables.
+-- Seeds the default server/world instances and the static balance tables.
 -- Values mirror packages/game-balance (buildings.ts / troops.ts) exactly —
 -- Postgres is the authoritative source enforced by the RPCs, the TS copy
 -- exists only so the frontend can render instant cost/duration previews.
 
 insert into public.servers (id, name, status, max_players)
 select gs, 'World ' || gs, 'open', 500
-from generate_series(1, 100) as gs
+from generate_series(1, 10) as gs
 on conflict (id) do nothing;
 
 insert into public.building_types

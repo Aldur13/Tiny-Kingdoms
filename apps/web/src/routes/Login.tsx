@@ -1,6 +1,11 @@
 import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
-import { signInAsGuest, signInWithPassword, signUpWithPassword } from "../lib/api";
+import {
+  resendConfirmationEmail,
+  signInAsGuest,
+  signInWithPassword,
+  signUpWithPassword,
+} from "../lib/api";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -10,6 +15,13 @@ export default function Login() {
   const [displayName, setDisplayName] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  // Set once we know the account needs email confirmation before it can sign
+  // in — either right after sign-up, or after a sign-in attempt bounces with
+  // "Email not confirmed". Once the user clicks the emailed link, Supabase
+  // establishes a session on this site automatically; App.tsx's routing
+  // guard then takes them straight into the game with no extra code needed.
+  const [pendingEmail, setPendingEmail] = useState<string | null>(null);
+  const [resendStatus, setResendStatus] = useState<"idle" | "sending" | "sent">("idle");
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -17,15 +29,40 @@ export default function Login() {
     setLoading(true);
     try {
       if (mode === "signup") {
-        await signUpWithPassword(email, password, displayName || email.split("@")[0] || email);
+        const result = await signUpWithPassword(
+          email,
+          password,
+          displayName || email.split("@")[0] || email
+        );
+        if (result.session) {
+          navigate("/servers");
+        } else {
+          setPendingEmail(email);
+        }
       } else {
         await signInWithPassword(email, password);
+        navigate("/servers");
       }
-      navigate("/servers");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
+      const message = err instanceof Error ? err.message : "Something went wrong";
+      setError(message);
+      if (mode === "signin" && message.toLowerCase().includes("email not confirmed")) {
+        setPendingEmail(email);
+      }
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleResend() {
+    if (!pendingEmail) return;
+    setResendStatus("sending");
+    try {
+      await resendConfirmationEmail(pendingEmail);
+      setResendStatus("sent");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to resend");
+      setResendStatus("idle");
     }
   }
 
@@ -40,6 +77,41 @@ export default function Login() {
     } finally {
       setLoading(false);
     }
+  }
+
+  if (pendingEmail) {
+    return (
+      <div className="mx-auto mt-24 max-w-sm rounded-xl bg-slate-900 p-8 text-center shadow-xl">
+        <h1 className="text-2xl font-bold">Check your email</h1>
+        <p className="mt-3 text-sm text-slate-400">
+          We sent a confirmation link to{" "}
+          <span className="font-medium text-slate-200">{pendingEmail}</span>. Click it to start
+          playing — you'll be signed in automatically.
+        </p>
+        {error && <p className="mt-3 text-sm text-red-400">{error}</p>}
+        <button
+          onClick={handleResend}
+          disabled={resendStatus === "sending"}
+          className="mt-4 w-full rounded-lg bg-slate-800 py-2 text-sm font-medium hover:bg-slate-700 disabled:opacity-50"
+        >
+          {resendStatus === "sent"
+            ? "Email sent!"
+            : resendStatus === "sending"
+              ? "Sending…"
+              : "Resend confirmation email"}
+        </button>
+        <button
+          onClick={() => {
+            setPendingEmail(null);
+            setError(null);
+            setResendStatus("idle");
+          }}
+          className="mt-2 w-full text-sm text-slate-400 hover:text-slate-200"
+        >
+          ← Back to sign in
+        </button>
+      </div>
+    );
   }
 
   return (

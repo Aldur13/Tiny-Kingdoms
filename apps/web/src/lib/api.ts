@@ -41,6 +41,11 @@ export async function signInAsGuest() {
   return data;
 }
 
+export async function resendConfirmationEmail(email: string) {
+  const { error } = await supabase.auth.resend({ type: "signup", email });
+  if (error) throw new Error(error.message);
+}
+
 export async function signOut() {
   const { error } = await supabase.auth.signOut();
   if (error) throw new Error(error.message);
