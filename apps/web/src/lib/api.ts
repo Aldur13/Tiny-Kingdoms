@@ -1,5 +1,8 @@
 import { supabase } from "./supabaseClient";
 import type {
+  Alliance,
+  AllianceMember,
+  AllianceMessage,
   BattleReport,
   Building,
   BuildingType,
@@ -270,4 +273,67 @@ export async function fetchNodeRaids(kingdomId: string): Promise<NodeRaid[]> {
       .order("created_at", { ascending: false })
       .limit(50)
   );
+}
+
+// ===== Alliances =====
+
+export async function fetchServerAlliances(serverId: number): Promise<Alliance[]> {
+  return unwrap(await supabase.from("alliances").select("*").eq("server_id", serverId).order("name"));
+}
+
+export async function fetchAllianceMembers(allianceId: string): Promise<AllianceMember[]> {
+  return unwrap(
+    await supabase.from("alliance_members").select("*").eq("alliance_id", allianceId).order("joined_at")
+  );
+}
+
+export async function fetchMyAllianceMembership(kingdomId: string): Promise<AllianceMember | null> {
+  const { data, error } = await supabase
+    .from("alliance_members")
+    .select("*")
+    .eq("kingdom_id", kingdomId)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+export async function createAlliance(kingdomId: string, name: string, tag: string): Promise<string> {
+  return unwrap(
+    await supabase.rpc("create_alliance", { p_kingdom_id: kingdomId, p_name: name, p_tag: tag })
+  );
+}
+
+export async function joinAlliance(kingdomId: string, allianceId: string): Promise<void> {
+  const { error } = await supabase.rpc("join_alliance", {
+    p_kingdom_id: kingdomId,
+    p_alliance_id: allianceId,
+  });
+  if (error) throw new Error(error.message);
+}
+
+export async function leaveAlliance(kingdomId: string): Promise<void> {
+  const { error } = await supabase.rpc("leave_alliance", { p_kingdom_id: kingdomId });
+  if (error) throw new Error(error.message);
+}
+
+export async function fetchAllianceMessages(allianceId: string): Promise<AllianceMessage[]> {
+  return unwrap(
+    await supabase
+      .from("alliance_messages")
+      .select("*")
+      .eq("alliance_id", allianceId)
+      .order("created_at", { ascending: false })
+      .limit(50)
+  );
+}
+
+export async function sendAllianceMessage(
+  allianceId: string,
+  kingdomId: string,
+  body: string
+): Promise<void> {
+  const { error } = await supabase
+    .from("alliance_messages")
+    .insert({ alliance_id: allianceId, kingdom_id: kingdomId, body });
+  if (error) throw new Error(error.message);
 }

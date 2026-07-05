@@ -207,3 +207,29 @@ export interface WoundedOrder {
   finishes_at: string;
   resolved: boolean;
 }
+
+export type AllianceRole = "leader" | "officer" | "member";
+
+export interface Alliance {
+  id: string;
+  server_id: number;
+  name: string;
+  tag: string;
+  leader_kingdom_id: string;
+  created_at: string;
+}
+
+export interface AllianceMember {
+  alliance_id: string;
+  kingdom_id: string;
+  role: AllianceRole;
+  joined_at: string;
+}
+
+export interface AllianceMessage {
+  id: string;
+  alliance_id: string;
+  kingdom_id: string;
+  body: string;
+  created_at: string;
+}

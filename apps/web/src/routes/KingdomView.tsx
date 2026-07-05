@@ -8,6 +8,7 @@ import { TrainTroopsModal } from "../components/TrainTroopsModal";
 import { CountdownTimer } from "../components/CountdownTimer";
 import { AnimatedNumber } from "../components/AnimatedNumber";
 import { ProgressMarch } from "../components/ProgressMarch";
+import { OnboardingTour } from "../components/OnboardingTour";
 import type { Building } from "../types/database.types";
 
 export default function KingdomView() {
@@ -53,6 +54,9 @@ export default function KingdomView() {
           </Link>
           <Link to={`/battles/${kingdom.id}`} className="text-slate-400 hover:underline">
             Battle reports →
+          </Link>
+          <Link to={`/alliance/${kingdom.id}`} className="text-slate-400 hover:underline">
+            Alliance →
           </Link>
         </div>
       </div>
@@ -145,6 +149,8 @@ export default function KingdomView() {
           onClose={() => setSelectedBuilding(null)}
         />
       )}
+
+      <OnboardingTour />
 
       {showTrainModal && (
         <TrainTroopsModal
