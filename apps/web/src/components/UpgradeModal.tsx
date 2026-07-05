@@ -19,6 +19,7 @@ function upgradeDuration(type: BuildingType, level: number) {
 export function UpgradeModal({
   building,
   type,
+  townHallLevel,
   onConfirm,
   onClose,
   isSubmitting,
@@ -26,12 +27,14 @@ export function UpgradeModal({
 }: {
   building: Building;
   type: BuildingType;
+  townHallLevel: number;
   onConfirm: () => void;
   onClose: () => void;
   isSubmitting: boolean;
   error: string | null;
 }) {
   const atMaxLevel = building.level >= type.max_level;
+  const cappedByTownHall = type.key !== "town_hall" && building.level >= townHallLevel;
   const cost = upgradeCost(type, building.level);
   const duration = upgradeDuration(type, building.level);
 
@@ -43,6 +46,10 @@ export function UpgradeModal({
         </h2>
         {atMaxLevel ? (
           <p className="mt-4 text-sm text-slate-400">This building is at max level.</p>
+        ) : cappedByTownHall ? (
+          <p className="mt-4 text-sm text-amber-400">
+            Upgrade Town Hall to level {building.level + 1} first — other buildings can't outgrow it.
+          </p>
         ) : (
           <>
             <p className="mt-2 text-sm text-slate-400">Upgrade to level {building.level + 1}</p>

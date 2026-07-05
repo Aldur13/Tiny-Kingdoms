@@ -1,5 +1,6 @@
 import { supabase } from "./supabaseClient";
 import type {
+  BattleReport,
   Building,
   BuildingType,
   Kingdom,
@@ -148,5 +149,32 @@ export async function fetchLeaderboard(serverId: number): Promise<LeaderboardEnt
       .eq("server_id", serverId)
       .order("power_score", { ascending: false })
       .limit(100)
+  );
+}
+
+// ===== Combat =====
+
+export async function sendAttack(
+  kingdomId: string,
+  defenderKingdomId: string,
+  troops: Partial<Record<TroopKey, number>>
+): Promise<string> {
+  return unwrap(
+    await supabase.rpc("send_attack", {
+      p_kingdom_id: kingdomId,
+      p_defender_kingdom_id: defenderKingdomId,
+      p_troops: troops,
+    })
+  );
+}
+
+export async function fetchBattleReports(kingdomId: string): Promise<BattleReport[]> {
+  return unwrap(
+    await supabase
+      .from("battle_reports")
+      .select("*")
+      .or(`attacker_kingdom_id.eq.${kingdomId},defender_kingdom_id.eq.${kingdomId}`)
+      .order("created_at", { ascending: false })
+      .limit(50)
   );
 }

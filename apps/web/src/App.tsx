@@ -4,6 +4,7 @@ import Login from "./routes/Login";
 import ServerSelect from "./routes/ServerSelect";
 import KingdomView from "./routes/KingdomView";
 import Leaderboard from "./routes/Leaderboard";
+import BattleReports from "./routes/BattleReports";
 
 function RequireAuth({ children }: { children: React.ReactElement }) {
   const { session, loading } = useAuth();
@@ -43,6 +44,14 @@ export default function App() {
         element={
           <RequireAuth>
             <Leaderboard />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/battles/:kingdomId"
+        element={
+          <RequireAuth>
+            <BattleReports />
           </RequireAuth>
         }
       />

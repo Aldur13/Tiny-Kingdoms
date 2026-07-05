@@ -12,11 +12,13 @@ const BUILDING_ICONS: Record<string, string> = {
 export function BuildingSlot({
   building,
   type,
+  cappedByTownHall,
   onClick,
   onUpgradeComplete,
 }: {
   building: Building;
   type: BuildingType;
+  cappedByTownHall: boolean;
   onClick: () => void;
   onUpgradeComplete: () => void;
 }) {
@@ -33,6 +35,9 @@ export function BuildingSlot({
       <span className="text-xs text-slate-400">Level {building.level}</span>
       {isUpgrading && building.upgrade_finishes_at && (
         <CountdownTimer finishesAt={building.upgrade_finishes_at} onComplete={onUpgradeComplete} />
+      )}
+      {!isUpgrading && cappedByTownHall && (
+        <span className="text-xs text-amber-400">🔒 needs Town Hall</span>
       )}
     </button>
   );

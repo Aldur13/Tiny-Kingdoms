@@ -32,10 +32,12 @@ export const BUILDING_TYPES: Record<BuildingKey, BuildingType> = {
     maxLevel: 20,
     produces: null,
     baseProductionPerSecond: 0,
-    baseCost: { wood: 200, stone: 200, gold: 50 },
-    costGrowth: 1.22,
-    baseUpgradeSeconds: 120,
-    durationGrowth: 1.2,
+    // Deliberately the steepest curve in the game — every other building is
+    // capped at the Town Hall's current level, so this is the pacing gate.
+    baseCost: { wood: 500, stone: 500, gold: 150 },
+    costGrowth: 1.35,
+    baseUpgradeSeconds: 600,
+    durationGrowth: 1.3,
   },
   sawmill: {
     key: "sawmill",
@@ -101,4 +103,15 @@ export function upgradeDurationSeconds(type: BuildingType, currentLevel: number)
 export function productionPerSecond(type: BuildingType, level: number) {
   if (!type.produces) return 0;
   return type.baseProductionPerSecond * level;
+}
+
+/** Every non-Town-Hall building is capped at the Town Hall's current level —
+ * enforced authoritatively by start_building_upgrade, mirrored here only for
+ * the frontend's instant preview/locked-state UI. */
+export function isCappedByTownHall(
+  buildingKey: BuildingKey,
+  buildingLevel: number,
+  townHallLevel: number
+) {
+  return buildingKey !== "town_hall" && buildingLevel >= townHallLevel;
 }

@@ -5,6 +5,7 @@ import { ResourceBar } from "../components/ResourceBar";
 import { BuildingSlot } from "../components/BuildingSlot";
 import { UpgradeModal } from "../components/UpgradeModal";
 import { TrainTroopsModal } from "../components/TrainTroopsModal";
+import { CountdownTimer } from "../components/CountdownTimer";
 import type { Building } from "../types/database.types";
 
 export default function KingdomView() {
@@ -23,6 +24,8 @@ export default function KingdomView() {
 
   const { kingdom, buildings, buildingTypes, troops, troopTypes, troopOrders } = data;
   const typeByKey = Object.fromEntries(buildingTypes.map((t) => [t.key, t]));
+  const townHallLevel = buildings.find((b) => b.type_key === "town_hall")?.level ?? 1;
+  const isProtected = !!kingdom.protected_until && new Date(kingdom.protected_until) > new Date();
 
   return (
     <div className="mx-auto max-w-3xl p-6">
@@ -30,13 +33,20 @@ export default function KingdomView() {
         <div>
           <h1 className="text-2xl font-bold">{kingdom.name}</h1>
           <p className="text-sm text-slate-400">Power score: {kingdom.power_score}</p>
+          {isProtected && (
+            <p className="mt-1 text-xs text-sky-400">
+              🛡 Protected for <CountdownTimer finishesAt={kingdom.protected_until!} />
+            </p>
+          )}
         </div>
-        <Link
-          to={`/leaderboard/${kingdom.server_id}?mine=${kingdom.id}`}
-          className="text-sm text-emerald-400 hover:underline"
-        >
-          View leaderboard →
-        </Link>
+        <div className="flex flex-col items-end gap-1 text-sm">
+          <Link to={`/leaderboard/${kingdom.server_id}?mine=${kingdom.id}`} className="text-emerald-400 hover:underline">
+            View leaderboard →
+          </Link>
+          <Link to={`/battles/${kingdom.id}`} className="text-slate-400 hover:underline">
+            Battle reports →
+          </Link>
+        </div>
       </div>
 
       <div className="mt-4">
@@ -50,6 +60,7 @@ export default function KingdomView() {
             key={building.id}
             building={building}
             type={typeByKey[building.type_key]!}
+            cappedByTownHall={building.type_key !== "town_hall" && building.level >= townHallLevel}
             onClick={() => setSelectedBuilding(building)}
             onUpgradeComplete={() => refetch()}
           />
@@ -68,10 +79,17 @@ export default function KingdomView() {
       <div className="mt-3 grid grid-cols-3 gap-3">
         {troopTypes.map((type) => {
           const owned = troops.find((t) => t.troop_key === type.key)?.quantity ?? 0;
+          const locked = type.required_town_hall_level > townHallLevel;
           return (
-            <div key={type.key} className="rounded-lg border border-slate-700 bg-slate-900 p-3 text-center">
+            <div
+              key={type.key}
+              className={`rounded-lg border p-3 text-center ${
+                locked ? "border-slate-800 opacity-40" : "border-slate-700 bg-slate-900"
+              }`}
+            >
               <div className="text-sm font-medium">{type.name}</div>
-              <div className="text-xl font-bold">{owned}</div>
+              <div className="text-xs text-slate-500">{type.class}</div>
+              <div className="text-xl font-bold">{locked ? "🔒" : owned}</div>
             </div>
           );
         })}
@@ -92,6 +110,7 @@ export default function KingdomView() {
         <UpgradeModal
           building={selectedBuilding}
           type={typeByKey[selectedBuilding.type_key]!}
+          townHallLevel={townHallLevel}
           isSubmitting={upgradeMutation.isPending}
           error={upgradeMutation.error instanceof Error ? upgradeMutation.error.message : null}
           onConfirm={() =>
@@ -104,6 +123,7 @@ export default function KingdomView() {
       {showTrainModal && (
         <TrainTroopsModal
           troopTypes={troopTypes}
+          townHallLevel={townHallLevel}
           isSubmitting={trainMutation.isPending}
           error={trainMutation.error instanceof Error ? trainMutation.error.message : null}
           onConfirm={(troopKey, quantity) =>

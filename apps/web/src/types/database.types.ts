@@ -61,15 +61,31 @@ export interface Building {
   upgrade_finishes_at: string | null;
 }
 
-export type TroopKey = "militia" | "archer" | "cavalry";
+export type TroopClass = "infantry" | "ranged" | "cavalry";
+
+export type TroopKey =
+  | "militia"
+  | "archer"
+  | "cavalry"
+  | "swordsman"
+  | "crossbowman"
+  | "lancer"
+  | "guardian"
+  | "sharpshooter"
+  | "knight";
 
 export interface TroopType {
   key: TroopKey;
   name: string;
+  class: TroopClass;
   train_seconds_base: number;
   power_per_unit: number;
   cost_wood: number;
   cost_food: number;
+  attack: number;
+  defense: number;
+  march_seconds: number;
+  required_town_hall_level: number;
 }
 
 export interface TroopOrder {
@@ -96,4 +112,25 @@ export interface LeaderboardEntry {
   power_score: number;
   rank: number | null;
   updated_at: string;
+}
+
+export interface BattleOutcome {
+  winner: "attacker" | "defender";
+  attacker_effective: number;
+  defender_effective: number;
+  attacker_loss_fraction: number;
+  defender_loss_fraction: number;
+  loot: { wood: number; stone: number; food: number; gold: number };
+}
+
+export interface BattleReport {
+  id: string;
+  server_id: number;
+  attacker_kingdom_id: string;
+  defender_kingdom_id: string;
+  march_started_at: string;
+  arrives_at: string;
+  resolved_at: string | null;
+  outcome: BattleOutcome | null;
+  created_at: string;
 }
