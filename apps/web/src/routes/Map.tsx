@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   useActiveGatheringOrders,
   useAttackGatheringParty,
@@ -11,6 +12,7 @@ import {
 import { useKingdom } from "../hooks/useKingdom";
 import { AttackModal } from "../components/AttackModal";
 import { CountdownTimer } from "../components/CountdownTimer";
+import { ProgressMarch } from "../components/ProgressMarch";
 import type { GatheringOrder, MapNode } from "../types/database.types";
 
 const RESOURCE_COLOR: Record<string, string> = {
@@ -41,6 +43,7 @@ export default function MapPage() {
   const { data: activeOrders, isLoading: ordersLoading } = useActiveGatheringOrders(serverIdNum);
   const { data: myOrders } = useMyGatheringOrders(myKingdomId);
   const [selection, setSelection] = useState<Selection | null>(null);
+  const [dispatchedNodeId, setDispatchedNodeId] = useState<string | null>(null);
   const { data: myKingdom } = useKingdom(selection ? myKingdomId : null);
 
   const startGatheringMutation = useStartGathering(serverIdNum, myKingdomId);
@@ -79,28 +82,64 @@ export default function MapPage() {
         className="relative mt-4 rounded-lg border border-slate-700 bg-slate-950"
         style={{ width: 20 * GRID_UNIT_PX, height: 20 * GRID_UNIT_PX }}
       >
-        {nodes?.map((node) => {
-          const order = orderByNodeId.get(node.id);
-          const isMine = order?.kingdom_id === myKingdomId;
-          return (
-            <button
-              key={node.id}
-              title={`${RESOURCE_LABEL[node.resource_type]} — Lv ${node.level}${order ? (isMine ? " (yours)" : " (occupied)") : ""}`}
-              onClick={() => handleNodeClick(node)}
-              className={`absolute flex items-center justify-center rounded-sm text-[8px] font-bold text-slate-950 ${RESOURCE_COLOR[node.resource_type]} ${
-                order ? (isMine ? "ring-2 ring-emerald-400" : "ring-2 ring-red-500 opacity-60") : "hover:ring-2 hover:ring-white"
-              }`}
-              style={{
-                left: node.position_x * GRID_UNIT_PX,
-                top: node.position_y * GRID_UNIT_PX,
-                width: GRID_UNIT_PX - 2,
-                height: GRID_UNIT_PX - 2,
-              }}
-            >
-              {node.level}
-            </button>
-          );
-        })}
+        <AnimatePresence>
+          {nodes?.map((node) => {
+            const order = orderByNodeId.get(node.id);
+            const isMine = order?.kingdom_id === myKingdomId;
+            const justDispatched = dispatchedNodeId === node.id;
+            return (
+              <motion.button
+                key={node.id}
+                layoutId={node.id}
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{
+                  scale: 1,
+                  opacity: 1,
+                  boxShadow: order
+                    ? isMine
+                      ? [
+                          "0 0 0px rgba(52,211,153,0)",
+                          "0 0 8px rgba(52,211,153,0.8)",
+                          "0 0 0px rgba(52,211,153,0)",
+                        ]
+                      : [
+                          "0 0 0px rgba(239,68,68,0)",
+                          "0 0 8px rgba(239,68,68,0.8)",
+                          "0 0 0px rgba(239,68,68,0)",
+                        ]
+                    : "0 0 0px rgba(0,0,0,0)",
+                }}
+                exit={{ scale: 0, opacity: 0 }}
+                transition={
+                  order
+                    ? { boxShadow: { duration: 1.6, repeat: Infinity, ease: "easeInOut" } }
+                    : { duration: 0.3 }
+                }
+                whileHover={{ scale: 1.3 }}
+                whileTap={{ scale: 0.9 }}
+                title={`${RESOURCE_LABEL[node.resource_type]} — Lv ${node.level}${order ? (isMine ? " (yours)" : " (occupied)") : ""}`}
+                onClick={() => handleNodeClick(node)}
+                className={`absolute flex items-center justify-center rounded-sm text-[8px] font-bold text-slate-950 ${RESOURCE_COLOR[node.resource_type]}`}
+                style={{
+                  left: node.position_x * GRID_UNIT_PX,
+                  top: node.position_y * GRID_UNIT_PX,
+                  width: GRID_UNIT_PX - 2,
+                  height: GRID_UNIT_PX - 2,
+                }}
+              >
+                {node.level}
+                {justDispatched && (
+                  <motion.span
+                    initial={{ scale: 0.5, opacity: 1 }}
+                    animate={{ scale: 2.5, opacity: 0 }}
+                    transition={{ duration: 0.8 }}
+                    className="absolute inset-0 rounded-full bg-white"
+                  />
+                )}
+              </motion.button>
+            );
+          })}
+        </AnimatePresence>
       </div>
 
       <div className="mt-3 flex gap-4 text-xs text-slate-400">
@@ -126,18 +165,21 @@ export default function MapPage() {
           )}
           <div className="mt-2 space-y-2">
             {activeMyOrders.map((order) => (
-              <div key={order.id} className="flex items-center justify-between rounded-lg bg-slate-900 p-3 text-sm">
-                <span>
-                  {RESOURCE_LABEL[order.resource_type]} — done in{" "}
-                  <CountdownTimer finishesAt={order.full_completes_at} />
-                </span>
-                <button
-                  onClick={() => recallMutation.mutate(order.id)}
-                  disabled={recallMutation.isPending}
-                  className="rounded-lg bg-slate-800 px-2 py-1 text-xs font-medium hover:bg-slate-700 disabled:opacity-50"
-                >
-                  Recall now
-                </button>
+              <div key={order.id} className="rounded-lg bg-slate-900 p-3 text-sm">
+                <div className="flex items-center justify-between">
+                  <span>
+                    {RESOURCE_LABEL[order.resource_type]} — done in{" "}
+                    <CountdownTimer finishesAt={order.full_completes_at} />
+                  </span>
+                  <button
+                    onClick={() => recallMutation.mutate(order.id)}
+                    disabled={recallMutation.isPending}
+                    className="rounded-lg bg-slate-800 px-2 py-1 text-xs font-medium hover:bg-slate-700 active:scale-95 disabled:opacity-50"
+                  >
+                    Recall now
+                  </button>
+                </div>
+                <ProgressMarch startedAt={order.started_at} finishesAt={order.full_completes_at} icon="⛏️" />
               </div>
             ))}
             {pastMyOrders.map((order) => (
@@ -167,7 +209,13 @@ export default function MapPage() {
           onConfirm={(troops) =>
             startGatheringMutation.mutate(
               { nodeId: selection.node.id, troops },
-              { onSuccess: () => setSelection(null) }
+              {
+                onSuccess: () => {
+                  setDispatchedNodeId(selection.node.id);
+                  setTimeout(() => setDispatchedNodeId(null), 900);
+                  setSelection(null);
+                },
+              }
             )
           }
           onClose={() => setSelection(null)}
@@ -185,7 +233,13 @@ export default function MapPage() {
           onConfirm={(troops) =>
             attackMutation.mutate(
               { gatheringOrderId: selection.order.id, troops },
-              { onSuccess: () => setSelection(null) }
+              {
+                onSuccess: () => {
+                  setDispatchedNodeId(selection.node.id);
+                  setTimeout(() => setDispatchedNodeId(null), 900);
+                  setSelection(null);
+                },
+              }
             )
           }
           onClose={() => setSelection(null)}

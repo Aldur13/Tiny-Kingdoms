@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { motion } from "framer-motion";
 import { marchSecondsForComposition } from "@chrome-game/game-balance";
 import type { Troop, TroopKey, TroopType } from "../types/database.types";
 
@@ -46,8 +47,19 @@ export function AttackModal({
   }
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-black/60" onClick={onClose}>
-      <div className="w-80 rounded-xl bg-slate-900 p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="fixed inset-0 flex items-center justify-center bg-black/60"
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9, y: 10 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        transition={{ type: "spring", stiffness: 350, damping: 26 }}
+        className="w-80 rounded-xl bg-slate-900 p-6 shadow-xl"
+        onClick={(e) => e.stopPropagation()}
+      >
         <h2 className="text-lg font-semibold">{title}</h2>
 
         {available.length === 0 ? (
@@ -79,23 +91,35 @@ export function AttackModal({
           </div>
         )}
 
-        <p className="mt-3 text-xs text-slate-400">
+        <p className="mt-3 flex items-center gap-2 text-xs text-slate-400">
           March time: <span className="text-slate-200">{formatDuration(marchSeconds)}</span>
+          {totalSelected > 0 && (
+            <motion.span
+              animate={{ x: [0, 6, 0] }}
+              transition={{ duration: 1, repeat: Infinity, ease: "easeInOut" }}
+            >
+              🪖
+            </motion.span>
+          )}
         </p>
 
         {error && <p className="mt-2 text-sm text-red-400">{error}</p>}
 
-        <button
+        <motion.button
+          whileTap={{ scale: 0.96 }}
           onClick={() => onConfirm(selected)}
           disabled={isSubmitting || totalSelected === 0}
           className="mt-4 w-full rounded-lg bg-red-700 py-2 font-medium hover:bg-red-600 disabled:opacity-50"
         >
           {isSubmitting ? "Sending…" : confirmLabel}
-        </button>
-        <button onClick={onClose} className="mt-2 w-full rounded-lg bg-slate-800 py-2 text-sm">
+        </motion.button>
+        <button
+          onClick={onClose}
+          className="mt-2 w-full rounded-lg bg-slate-800 py-2 text-sm transition-transform active:scale-95"
+        >
           Cancel
         </button>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }

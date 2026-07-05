@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
+import { AnimatePresence, motion } from "framer-motion";
 import { useLeaderboard } from "../hooks/useLeaderboard";
 import { useKingdom } from "../hooks/useKingdom";
 import { useSendAttack } from "../hooks/useCombat";
 import { AttackModal } from "../components/AttackModal";
+import { AnimatedNumber } from "../components/AnimatedNumber";
 import type { LeaderboardEntry } from "../types/database.types";
 
 export default function Leaderboard() {
@@ -24,34 +26,43 @@ export default function Leaderboard() {
     <div className="mx-auto max-w-2xl p-6">
       <h1 className="text-2xl font-bold">World {serverId} Leaderboard</h1>
       <ol className="mt-4 space-y-1">
-        {data?.map((entry, i) => {
-          const isMe = entry.kingdom_id === myKingdomId;
-          return (
-            <li
-              key={entry.kingdom_id}
-              className={`flex items-center justify-between rounded-lg px-3 py-2 ${
-                isMe ? "bg-emerald-900/50 ring-1 ring-emerald-500" : i === 0 ? "bg-amber-900/40" : "bg-slate-900"
-              }`}
-            >
-              <span className="flex items-center gap-3">
-                <span className="w-6 text-right font-mono text-slate-400">{i + 1}</span>
-                <span className="font-medium">{entry.kingdom_name}</span>
-                <span className="text-xs text-slate-500">({entry.owner_display_name})</span>
-              </span>
-              <span className="flex items-center gap-3">
-                <span className="font-mono">{entry.power_score.toLocaleString()}</span>
-                {!isMe && myKingdomId && (
-                  <button
-                    onClick={() => setAttackTarget(entry)}
-                    className="rounded-lg bg-red-800 px-2 py-1 text-xs font-medium hover:bg-red-700"
-                  >
-                    Attack
-                  </button>
-                )}
-              </span>
-            </li>
-          );
-        })}
+        <AnimatePresence initial={false}>
+          {data?.map((entry, i) => {
+            const isMe = entry.kingdom_id === myKingdomId;
+            return (
+              <motion.li
+                key={entry.kingdom_id}
+                layout
+                initial={{ opacity: 0, x: -16 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0 }}
+                transition={{ layout: { duration: 0.5, ease: "easeOut" }, duration: 0.3, delay: i * 0.03 }}
+                className={`flex items-center justify-between rounded-lg px-3 py-2 ${
+                  isMe ? "bg-emerald-900/50 ring-1 ring-emerald-500" : i === 0 ? "bg-amber-900/40" : "bg-slate-900"
+                }`}
+              >
+                <span className="flex items-center gap-3">
+                  <span className="w-6 text-right font-mono text-slate-400">{i + 1}</span>
+                  <span className="font-medium">{entry.kingdom_name}</span>
+                  <span className="text-xs text-slate-500">({entry.owner_display_name})</span>
+                </span>
+                <span className="flex items-center gap-3">
+                  <AnimatedNumber value={entry.power_score} className="font-mono" />
+                  {!isMe && myKingdomId && (
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => setAttackTarget(entry)}
+                      className="rounded-lg bg-red-800 px-2 py-1 text-xs font-medium hover:bg-red-700"
+                    >
+                      Attack
+                    </motion.button>
+                  )}
+                </span>
+              </motion.li>
+            );
+          })}
+        </AnimatePresence>
       </ol>
       <Link to="/servers" className="mt-6 inline-block text-sm text-emerald-400 hover:underline">
         ← Back to servers

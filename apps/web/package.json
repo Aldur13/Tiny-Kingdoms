@@ -14,6 +14,7 @@
     "@chrome-game/game-balance": "*",
     "@supabase/supabase-js": "^2.45.0",
     "@tanstack/react-query": "^5.56.0",
+    "framer-motion": "^12.42.2",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.26.0",

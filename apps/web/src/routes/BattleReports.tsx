@@ -1,6 +1,31 @@
 import { Link, useParams } from "react-router-dom";
+import { motion } from "framer-motion";
 import { useBattleReports } from "../hooks/useCombat";
 import { useNodeRaids } from "../hooks/useMap";
+
+// One-time reveal per row on mount (keyed by a stable id, so refetches don't
+// replay it): victories pop with a gold flash, defeats shake.
+function outcomeAnimation(pending: boolean, won: boolean) {
+  if (pending) return { initial: { opacity: 0, x: -12 }, animate: { opacity: 1, x: 0 } };
+  if (won) {
+    return {
+      initial: { opacity: 0, scale: 0.85, boxShadow: "0 0 0px rgba(251,191,36,0)" },
+      animate: {
+        opacity: 1,
+        scale: 1,
+        boxShadow: [
+          "0 0 0px rgba(251,191,36,0)",
+          "0 0 20px rgba(251,191,36,0.6)",
+          "0 0 0px rgba(251,191,36,0)",
+        ],
+      },
+    };
+  }
+  return {
+    initial: { opacity: 0, x: 0 },
+    animate: { opacity: 1, x: [0, -8, 8, -6, 6, 0] },
+  };
+}
 
 export default function BattleReports() {
   const { kingdomId = "" } = useParams();
@@ -20,11 +45,15 @@ export default function BattleReports() {
           {data.map((report) => {
             const isAttacker = report.attacker_kingdom_id === kingdomId;
             const pending = !report.resolved_at;
-            const won = report.outcome && report.outcome.winner === (isAttacker ? "attacker" : "defender");
+            const won = !!report.outcome && report.outcome.winner === (isAttacker ? "attacker" : "defender");
+            const anim = outcomeAnimation(pending, won);
 
             return (
-              <li
+              <motion.li
                 key={report.id}
+                initial={anim.initial}
+                animate={anim.animate}
+                transition={{ duration: 0.6 }}
                 className={`rounded-lg border p-3 text-sm ${
                   pending
                     ? "border-slate-700 bg-slate-900"
@@ -46,7 +75,7 @@ export default function BattleReports() {
                 ) : (
                   report.outcome && (
                     <div className="mt-1 space-y-0.5">
-                      <p>{won ? "Victory" : "Defeat"}</p>
+                      <p>{won ? "🏆 Victory" : "💀 Defeat"}</p>
                       {won && isAttacker && (
                         <p className="text-xs text-slate-400">
                           Looted 🪵{report.outcome.loot.wood} 🪨{report.outcome.loot.stone} 🌾
@@ -56,7 +85,7 @@ export default function BattleReports() {
                     </div>
                   )
                 )}
-              </li>
+              </motion.li>
             );
           })}
         </ul>
@@ -70,9 +99,13 @@ export default function BattleReports() {
           {raids.map((raid) => {
             const pending = !raid.resolved_at;
             const won = raid.outcome?.result === "attacker_won";
+            const anim = outcomeAnimation(pending, won);
             return (
-              <li
+              <motion.li
                 key={raid.id}
+                initial={anim.initial}
+                animate={anim.animate}
+                transition={{ duration: 0.6 }}
                 className={`rounded-lg border p-3 text-sm ${
                   pending
                     ? "border-slate-700 bg-slate-900"
@@ -93,10 +126,10 @@ export default function BattleReports() {
                   <p className="mt-1 text-slate-400">Target already gone — troops returned home.</p>
                 ) : (
                   <p className="mt-1">
-                    {won ? `Victory — plundered ${raid.outcome?.plundered ?? 0}` : "Defeat"}
+                    {won ? `🏆 Victory — plundered ${raid.outcome?.plundered ?? 0}` : "💀 Defeat"}
                   </p>
                 )}
-              </li>
+              </motion.li>
             );
           })}
         </ul>

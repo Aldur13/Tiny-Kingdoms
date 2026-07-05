@@ -6,6 +6,8 @@ import { BuildingSlot } from "../components/BuildingSlot";
 import { UpgradeModal } from "../components/UpgradeModal";
 import { TrainTroopsModal } from "../components/TrainTroopsModal";
 import { CountdownTimer } from "../components/CountdownTimer";
+import { AnimatedNumber } from "../components/AnimatedNumber";
+import { ProgressMarch } from "../components/ProgressMarch";
 import type { Building } from "../types/database.types";
 
 export default function KingdomView() {
@@ -95,18 +97,21 @@ export default function KingdomView() {
             >
               <div className="text-sm font-medium">{type.name}</div>
               <div className="text-xs text-slate-500">{type.class}</div>
-              <div className="text-xl font-bold">{locked ? "🔒" : owned}</div>
+              <div className="text-xl font-bold">
+                {locked ? "🔒" : <AnimatedNumber value={owned} />}
+              </div>
             </div>
           );
         })}
       </div>
 
       {troopOrders.length > 0 && (
-        <div className="mt-4 space-y-1 text-sm text-slate-400">
+        <div className="mt-4 space-y-3 text-sm text-slate-400">
           {troopOrders.map((order) => (
             <div key={order.id}>
               Training {order.quantity} {order.troop_key} — done at{" "}
               {new Date(order.finishes_at).toLocaleTimeString()}
+              <ProgressMarch startedAt={order.started_at} finishesAt={order.finishes_at} icon="🪖" onComplete={() => refetch()} />
             </div>
           ))}
         </div>
@@ -115,11 +120,12 @@ export default function KingdomView() {
       {woundedOrders.length > 0 && (
         <div className="mt-8">
           <h2 className="text-lg font-semibold">🏥 Hospital</h2>
-          <div className="mt-2 space-y-1 text-sm text-slate-400">
+          <div className="mt-2 space-y-3 text-sm text-slate-400">
             {woundedOrders.map((order) => (
               <div key={order.id}>
                 {order.quantity} {order.troop_key} healing — ready in{" "}
                 <CountdownTimer finishesAt={order.finishes_at} onComplete={() => refetch()} />
+                <ProgressMarch startedAt={order.started_at} finishesAt={order.finishes_at} icon="🩹" onComplete={() => refetch()} />
               </div>
             ))}
           </div>

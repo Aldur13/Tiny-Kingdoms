@@ -5,3 +5,15 @@
 body {
   @apply bg-slate-950 text-slate-100;
 }
+
+/* Snappy press feedback on every button in the app, without needing to
+   touch every button's className individually. Framer Motion handles the
+   fancier per-element animations (marching icons, level-up pops, outcome
+   reveals) elsewhere; this covers the baseline "does it feel responsive"
+   case everywhere else. */
+button:not(:disabled) {
+  transition: transform 0.1s ease;
+}
+button:not(:disabled):active {
+  transform: scale(0.96);
+}

@@ -1,4 +1,5 @@
 import type { Kingdom } from "../types/database.types";
+import { AnimatedNumber } from "./AnimatedNumber";
 
 const RESOURCE_ICONS = { wood: "🪵", stone: "🪨", food: "🌾", gold: "🪙" } as const;
 
@@ -8,7 +9,7 @@ export function ResourceBar({ kingdom }: { kingdom: Kingdom }) {
       {(Object.keys(RESOURCE_ICONS) as (keyof typeof RESOURCE_ICONS)[]).map((key) => (
         <div key={key} className="flex items-center gap-1 text-sm">
           <span>{RESOURCE_ICONS[key]}</span>
-          <span className="font-semibold tabular-nums">{Math.floor(kingdom[key]).toLocaleString()}</span>
+          <AnimatedNumber value={Math.floor(kingdom[key])} className="font-semibold tabular-nums" />
         </div>
       ))}
     </div>
