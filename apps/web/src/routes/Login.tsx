@@ -1,22 +1,25 @@
 import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
-import { resendConfirmationEmail, signInWithPassword, signUpWithPassword } from "../lib/api";
+import {
+  resetPasswordWithRecoveryPhrase,
+  setRecoveryPhrase,
+  signInWithPassword,
+  signUpWithPassword,
+} from "../lib/api";
+
+type Mode = "signin" | "signup" | "reset";
 
 export default function Login() {
   const navigate = useNavigate();
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
+  const [mode, setMode] = useState<Mode>("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
+  const [recoveryPhrase, setRecoveryPhraseInput] = useState("");
+  const [newPassword, setNewPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [resetDone, setResetDone] = useState(false);
   const [loading, setLoading] = useState(false);
-  // Set once we know the account needs email confirmation before it can sign
-  // in — either right after sign-up, or after a sign-in attempt bounces with
-  // "Email not confirmed". Once the user clicks the emailed link, Supabase
-  // establishes a session on this site automatically; App.tsx's routing
-  // guard then takes them straight into the game with no extra code needed.
-  const [pendingEmail, setPendingEmail] = useState<string | null>(null);
-  const [resendStatus, setResendStatus] = useState<"idle" | "sending" | "sent">("idle");
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -24,73 +27,59 @@ export default function Login() {
     setLoading(true);
     try {
       if (mode === "signup") {
+        if (recoveryPhrase.trim().length < 4) {
+          throw new Error("Recovery phrase must be at least 4 characters");
+        }
+
         const result = await signUpWithPassword(
           email,
           password,
           displayName || email.split("@")[0] || email
         );
-        if (result.session) {
-          navigate("/servers");
-        } else {
-          setPendingEmail(email);
+
+        if (!result.session) {
+          throw new Error(
+            'Sign-up succeeded, but no session came back — your Supabase project still has "Confirm email" enabled. Disable it under Authentication settings and try again.'
+          );
         }
+
+        await setRecoveryPhrase(recoveryPhrase.trim());
+        navigate("/servers");
+      } else if (mode === "reset") {
+        await resetPasswordWithRecoveryPhrase(email, recoveryPhrase, newPassword);
+        setResetDone(true);
       } else {
         await signInWithPassword(email, password);
         navigate("/servers");
       }
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Something went wrong";
-      setError(message);
-      if (mode === "signin" && message.toLowerCase().includes("email not confirmed")) {
-        setPendingEmail(email);
-      }
+      setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {
       setLoading(false);
     }
   }
 
-  async function handleResend() {
-    if (!pendingEmail) return;
-    setResendStatus("sending");
-    try {
-      await resendConfirmationEmail(pendingEmail);
-      setResendStatus("sent");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to resend");
-      setResendStatus("idle");
-    }
+  function switchMode(next: Mode) {
+    setMode(next);
+    setError(null);
+    setResetDone(false);
+    setPassword("");
+    setNewPassword("");
+    setRecoveryPhraseInput("");
   }
 
-  if (pendingEmail) {
+  if (mode === "reset" && resetDone) {
     return (
       <div className="mx-auto mt-24 max-w-sm rounded-xl bg-slate-900 p-8 text-center shadow-xl">
-        <h1 className="text-2xl font-bold">Check your email</h1>
+        <h1 className="text-2xl font-bold">Password updated</h1>
         <p className="mt-3 text-sm text-slate-400">
-          We sent a confirmation link to{" "}
-          <span className="font-medium text-slate-200">{pendingEmail}</span>. Click it to start
-          playing — you'll be signed in automatically.
+          Sign in with your new password.
         </p>
-        {error && <p className="mt-3 text-sm text-red-400">{error}</p>}
         <button
-          onClick={handleResend}
-          disabled={resendStatus === "sending"}
-          className="mt-4 w-full rounded-lg bg-slate-800 py-2 text-sm font-medium hover:bg-slate-700 disabled:opacity-50"
+          onClick={() => switchMode("signin")}
+          className="mt-4 w-full rounded-lg bg-emerald-600 py-2 font-medium hover:bg-emerald-500"
         >
-          {resendStatus === "sent"
-            ? "Email sent!"
-            : resendStatus === "sending"
-              ? "Sending…"
-              : "Resend confirmation email"}
-        </button>
-        <button
-          onClick={() => {
-            setPendingEmail(null);
-            setError(null);
-            setResendStatus("idle");
-          }}
-          className="mt-2 w-full text-sm text-slate-400 hover:text-slate-200"
-        >
-          ← Back to sign in
+          Back to sign in
         </button>
       </div>
     );
@@ -99,7 +88,9 @@ export default function Login() {
   return (
     <div className="mx-auto mt-24 max-w-sm rounded-xl bg-slate-900 p-8 shadow-xl">
       <h1 className="text-2xl font-bold">Kingdom Builder</h1>
-      <p className="mt-1 text-sm text-slate-400">Build. Train. Climb the leaderboard.</p>
+      <p className="mt-1 text-sm text-slate-400">
+        {mode === "reset" ? "Reset your password" : "Build. Train. Climb the leaderboard."}
+      </p>
 
       <form onSubmit={handleSubmit} className="mt-6 space-y-3">
         {mode === "signup" && (
@@ -118,30 +109,86 @@ export default function Login() {
           required
           className="w-full rounded-lg bg-slate-800 p-2"
         />
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          minLength={6}
-          className="w-full rounded-lg bg-slate-800 p-2"
-        />
+
+        {mode !== "reset" && (
+          <input
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            minLength={6}
+            className="w-full rounded-lg bg-slate-800 p-2"
+          />
+        )}
+
+        {(mode === "signup" || mode === "reset") && (
+          <input
+            type="text"
+            placeholder={
+              mode === "signup" ? "Recovery phrase (for password reset)" : "Your recovery phrase"
+            }
+            value={recoveryPhrase}
+            onChange={(e) => setRecoveryPhraseInput(e.target.value)}
+            required
+            minLength={4}
+            className="w-full rounded-lg bg-slate-800 p-2"
+          />
+        )}
+
+        {mode === "reset" && (
+          <input
+            type="password"
+            placeholder="New password"
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+            required
+            minLength={6}
+            className="w-full rounded-lg bg-slate-800 p-2"
+          />
+        )}
+
+        {mode === "signup" && (
+          <p className="text-xs text-slate-500">
+            No email confirmation needed — remember this phrase, it's the only way to reset your
+            password later.
+          </p>
+        )}
+
         {error && <p className="text-sm text-red-400">{error}</p>}
         <button
           type="submit"
           disabled={loading}
           className="w-full rounded-lg bg-emerald-600 py-2 font-medium hover:bg-emerald-500 disabled:opacity-50"
         >
-          {mode === "signup" ? "Sign up" : "Sign in"}
+          {loading
+            ? "Working…"
+            : mode === "signup"
+              ? "Sign up"
+              : mode === "reset"
+                ? "Reset password"
+                : "Sign in"}
         </button>
       </form>
 
+      {mode === "signin" && (
+        <button
+          onClick={() => switchMode("reset")}
+          className="mt-3 w-full text-sm text-slate-500 hover:text-slate-300"
+        >
+          Forgot password?
+        </button>
+      )}
+
       <button
-        onClick={() => setMode(mode === "signup" ? "signin" : "signup")}
+        onClick={() => switchMode(mode === "signup" ? "signin" : mode === "reset" ? "signin" : "signup")}
         className="mt-3 w-full text-sm text-slate-400 hover:text-slate-200"
       >
-        {mode === "signup" ? "Already have an account? Sign in" : "New here? Create an account"}
+        {mode === "signup"
+          ? "Already have an account? Sign in"
+          : mode === "reset"
+            ? "← Back to sign in"
+            : "New here? Create an account"}
       </button>
     </div>
   );

@@ -44,13 +44,30 @@ export async function signInWithPassword(email: string, password: string) {
   return data;
 }
 
-export async function resendConfirmationEmail(email: string) {
-  const { error } = await supabase.auth.resend({ type: "signup", email });
+export async function signOut() {
+  const { error } = await supabase.auth.signOut();
   if (error) throw new Error(error.message);
 }
 
-export async function signOut() {
-  const { error } = await supabase.auth.signOut();
+/** Sets/replaces the calling user's own recovery phrase — used at signup
+ * and any time after from Settings. */
+export async function setRecoveryPhrase(recoveryPhrase: string): Promise<void> {
+  const { error } = await supabase.rpc("set_recovery_phrase", { p_recovery_phrase: recoveryPhrase });
+  if (error) throw new Error(error.message);
+}
+
+/** Password reset with no email round-trip: proves account ownership via
+ * the recovery phrase set at signup, then sets a new password directly. */
+export async function resetPasswordWithRecoveryPhrase(
+  email: string,
+  recoveryPhrase: string,
+  newPassword: string
+): Promise<void> {
+  const { error } = await supabase.rpc("reset_password_with_recovery_phrase", {
+    p_email: email,
+    p_recovery_phrase: recoveryPhrase,
+    p_new_password: newPassword,
+  });
   if (error) throw new Error(error.message);
 }
 

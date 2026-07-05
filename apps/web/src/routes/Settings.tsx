@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useSettingsStore } from "../hooks/useSettings";
-import { signOut } from "../lib/api";
+import { setRecoveryPhrase, signOut } from "../lib/api";
 import { playSound } from "../lib/sound";
 import { supabase } from "../lib/supabaseClient";
 
@@ -11,6 +11,9 @@ export default function Settings() {
   const toggleSound = useSettingsStore((s) => s.toggleSound);
   const [displayName, setDisplayName] = useState("");
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [recoveryPhrase, setRecoveryPhraseInput] = useState("");
+  const [recoveryStatus, setRecoveryStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [recoveryError, setRecoveryError] = useState<string | null>(null);
 
   async function handleSaveDisplayName() {
     const trimmed = displayName.trim();
@@ -31,6 +34,25 @@ export default function Settings() {
       .eq("id", userData.user.id);
 
     setSaveStatus(profileError ? "error" : "saved");
+  }
+
+  async function handleSaveRecoveryPhrase() {
+    const trimmed = recoveryPhrase.trim();
+    if (trimmed.length < 4) {
+      setRecoveryStatus("error");
+      setRecoveryError("Recovery phrase must be at least 4 characters");
+      return;
+    }
+    setRecoveryStatus("saving");
+    setRecoveryError(null);
+    try {
+      await setRecoveryPhrase(trimmed);
+      setRecoveryStatus("saved");
+      setRecoveryPhraseInput("");
+    } catch (err) {
+      setRecoveryStatus("error");
+      setRecoveryError(err instanceof Error ? err.message : "Failed to save");
+    }
   }
 
   async function handleSignOut() {
@@ -80,6 +102,33 @@ export default function Settings() {
         </div>
         {saveStatus === "saved" && <p className="mt-2 text-xs text-emerald-400">Saved!</p>}
         {saveStatus === "error" && <p className="mt-2 text-xs text-red-400">Failed to save.</p>}
+      </div>
+
+      <div className="mt-4 rounded-lg bg-slate-900 p-4">
+        <label className="block text-sm font-medium">Recovery phrase</label>
+        <p className="mt-1 text-xs text-slate-400">
+          Used to reset your password without email — set or replace it here any time.
+        </p>
+        <div className="mt-2 flex gap-2">
+          <input
+            type="text"
+            value={recoveryPhrase}
+            onChange={(e) => setRecoveryPhraseInput(e.target.value)}
+            placeholder="New recovery phrase"
+            className="flex-1 rounded-lg bg-slate-800 p-2 text-sm"
+          />
+          <button
+            onClick={handleSaveRecoveryPhrase}
+            disabled={recoveryStatus === "saving"}
+            className="rounded-lg bg-emerald-600 px-3 py-2 text-sm font-medium hover:bg-emerald-500 disabled:opacity-50"
+          >
+            Save
+          </button>
+        </div>
+        {recoveryStatus === "saved" && <p className="mt-2 text-xs text-emerald-400">Saved!</p>}
+        {recoveryStatus === "error" && (
+          <p className="mt-2 text-xs text-red-400">{recoveryError ?? "Failed to save."}</p>
+        )}
       </div>
 
       <button
