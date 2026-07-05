@@ -7,6 +7,8 @@ const BUILDING_ICONS: Record<string, string> = {
   quarry: "⛏️",
   farm: "🌱",
   barracks: "⚔️",
+  goldmine: "💰",
+  hospital: "🏥",
 };
 
 export function BuildingSlot({

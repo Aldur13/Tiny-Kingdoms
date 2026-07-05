@@ -6,6 +6,7 @@ import KingdomView from "./routes/KingdomView";
 import Leaderboard from "./routes/Leaderboard";
 import BattleReports from "./routes/BattleReports";
 import Shop from "./routes/Shop";
+import MapPage from "./routes/Map";
 
 function RequireAuth({ children }: { children: React.ReactElement }) {
   const { session, loading } = useAuth();
@@ -61,6 +62,14 @@ export default function App() {
         element={
           <RequireAuth>
             <Shop />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/map/:serverId"
+        element={
+          <RequireAuth>
+            <MapPage />
           </RequireAuth>
         }
       />

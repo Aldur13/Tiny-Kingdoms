@@ -59,7 +59,7 @@ export default function Leaderboard() {
 
       {attackTarget && myKingdom && (
         <AttackModal
-          defenderName={attackTarget.kingdom_name}
+          title={`Attack ${attackTarget.kingdom_name}`}
           troops={myKingdom.troops}
           troopTypes={myKingdom.troopTypes}
           isSubmitting={sendAttackMutation.isPending}

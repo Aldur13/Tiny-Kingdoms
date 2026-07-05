@@ -35,13 +35,20 @@ export interface Kingdom {
   created_at: string;
 }
 
-export type BuildingKey = "town_hall" | "sawmill" | "quarry" | "farm" | "barracks";
+export type BuildingKey =
+  | "town_hall"
+  | "sawmill"
+  | "quarry"
+  | "farm"
+  | "barracks"
+  | "goldmine"
+  | "hospital";
 
 export interface BuildingType {
   key: BuildingKey;
   name: string;
   max_level: number;
-  produces: "wood" | "stone" | "food" | null;
+  produces: "wood" | "stone" | "food" | "gold" | null;
   base_production_per_second: number;
   base_cost_wood: number;
   base_cost_stone: number;
@@ -49,6 +56,7 @@ export interface BuildingType {
   cost_growth: number;
   base_upgrade_seconds: number;
   duration_growth: number;
+  capacity_per_level: number;
 }
 
 export interface Building {
@@ -140,4 +148,62 @@ export interface ShopItem {
   name: string;
   cost_gold: number;
   shield_hours: number;
+}
+
+export type MapResourceType = "gold" | "wood" | "stone";
+
+export interface MapNode {
+  id: string;
+  server_id: number;
+  resource_type: MapResourceType;
+  level: number;
+  position_x: number;
+  position_y: number;
+  total_yield: number;
+  created_at: string;
+}
+
+export interface GatheringOrder {
+  id: string;
+  server_id: number;
+  kingdom_id: string;
+  node_id: string;
+  resource_type: MapResourceType;
+  total_yield: number;
+  troops: Partial<Record<TroopKey, number>>;
+  started_at: string;
+  full_completes_at: string;
+  resolved_at: string | null;
+  resource_awarded: number | null;
+  interrupted: boolean | null;
+}
+
+export interface NodeRaidOutcome {
+  result: "attacker_won" | "defender_won" | "missed_target";
+  plundered?: number;
+  attacker_effective?: number;
+  defender_effective?: number;
+}
+
+export interface NodeRaid {
+  id: string;
+  server_id: number;
+  attacker_kingdom_id: string;
+  gathering_order_id: string;
+  attacker_troops: Partial<Record<TroopKey, number>>;
+  march_started_at: string;
+  arrives_at: string;
+  resolved_at: string | null;
+  outcome: NodeRaidOutcome | null;
+  created_at: string;
+}
+
+export interface WoundedOrder {
+  id: string;
+  kingdom_id: string;
+  troop_key: TroopKey;
+  quantity: number;
+  started_at: string;
+  finishes_at: string;
+  resolved: boolean;
 }

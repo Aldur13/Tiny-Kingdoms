@@ -31,3 +31,23 @@ values
   ('archer',  'Archer',  'ranged',   15, 2, 30, 15, 8,  4, 360, 1),
   ('cavalry', 'Cavalry', 'cavalry',  25, 4, 50, 30, 10, 5, 180, 1)
 on conflict (key) do nothing;
+
+-- Seed 5 neutral map nodes of each resource type per server (only for
+-- servers that don't have any yet, so re-running this file is safe).
+do $$
+declare
+  v_server record;
+  v_type text;
+  i int;
+begin
+  for v_server in select id from servers loop
+    if not exists (select 1 from map_nodes where server_id = v_server.id) then
+      foreach v_type in array array['gold', 'wood', 'stone']
+      loop
+        for i in 1..5 loop
+          perform spawn_map_node(v_server.id, v_type);
+        end loop;
+      end loop;
+    end if;
+  end loop;
+end $$;

@@ -22,7 +22,7 @@ export default function KingdomView() {
     return <p className="p-8 text-red-400">{(error as Error)?.message ?? "Kingdom not found"}</p>;
   }
 
-  const { kingdom, buildings, buildingTypes, troops, troopTypes, troopOrders } = data;
+  const { kingdom, buildings, buildingTypes, troops, troopTypes, troopOrders, woundedOrders } = data;
   const typeByKey = Object.fromEntries(buildingTypes.map((t) => [t.key, t]));
   const townHallLevel = buildings.find((b) => b.type_key === "town_hall")?.level ?? 1;
   const isProtected = !!kingdom.protected_until && new Date(kingdom.protected_until) > new Date();
@@ -42,6 +42,9 @@ export default function KingdomView() {
         <div className="flex flex-col items-end gap-1 text-sm">
           <Link to={`/leaderboard/${kingdom.server_id}?mine=${kingdom.id}`} className="text-emerald-400 hover:underline">
             View leaderboard →
+          </Link>
+          <Link to={`/map/${kingdom.server_id}?mine=${kingdom.id}`} className="text-slate-400 hover:underline">
+            Map →
           </Link>
           <Link to={`/shop/${kingdom.id}`} className="text-slate-400 hover:underline">
             Shop →
@@ -106,6 +109,20 @@ export default function KingdomView() {
               {new Date(order.finishes_at).toLocaleTimeString()}
             </div>
           ))}
+        </div>
+      )}
+
+      {woundedOrders.length > 0 && (
+        <div className="mt-8">
+          <h2 className="text-lg font-semibold">🏥 Hospital</h2>
+          <div className="mt-2 space-y-1 text-sm text-slate-400">
+            {woundedOrders.map((order) => (
+              <div key={order.id}>
+                {order.quantity} {order.troop_key} healing — ready in{" "}
+                <CountdownTimer finishesAt={order.finishes_at} onComplete={() => refetch()} />
+              </div>
+            ))}
+          </div>
         </div>
       )}
 

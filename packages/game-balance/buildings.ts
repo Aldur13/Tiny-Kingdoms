@@ -10,19 +10,23 @@ export type BuildingKey =
   | "sawmill"
   | "quarry"
   | "farm"
-  | "barracks";
+  | "barracks"
+  | "goldmine"
+  | "hospital";
 
 export interface BuildingType {
   key: BuildingKey;
   name: string;
   maxLevel: number;
   /** Resource this building produces per second at level 1, or null. */
-  produces: "wood" | "stone" | "food" | null;
+  produces: "wood" | "stone" | "food" | "gold" | null;
   baseProductionPerSecond: number;
   baseCost: { wood: number; stone: number; gold: number };
   costGrowth: number;
   baseUpgradeSeconds: number;
   durationGrowth: number;
+  /** Hospital-only: wounded-troop capacity added per level. */
+  capacityPerLevel: number;
 }
 
 export const BUILDING_TYPES: Record<BuildingKey, BuildingType> = {
@@ -38,6 +42,7 @@ export const BUILDING_TYPES: Record<BuildingKey, BuildingType> = {
     costGrowth: 1.35,
     baseUpgradeSeconds: 600,
     durationGrowth: 1.3,
+    capacityPerLevel: 0,
   },
   sawmill: {
     key: "sawmill",
@@ -49,6 +54,7 @@ export const BUILDING_TYPES: Record<BuildingKey, BuildingType> = {
     costGrowth: 1.18,
     baseUpgradeSeconds: 60,
     durationGrowth: 1.18,
+    capacityPerLevel: 0,
   },
   quarry: {
     key: "quarry",
@@ -60,6 +66,7 @@ export const BUILDING_TYPES: Record<BuildingKey, BuildingType> = {
     costGrowth: 1.18,
     baseUpgradeSeconds: 60,
     durationGrowth: 1.18,
+    capacityPerLevel: 0,
   },
   farm: {
     key: "farm",
@@ -71,6 +78,7 @@ export const BUILDING_TYPES: Record<BuildingKey, BuildingType> = {
     costGrowth: 1.18,
     baseUpgradeSeconds: 60,
     durationGrowth: 1.18,
+    capacityPerLevel: 0,
   },
   barracks: {
     key: "barracks",
@@ -82,6 +90,31 @@ export const BUILDING_TYPES: Record<BuildingKey, BuildingType> = {
     costGrowth: 1.2,
     baseUpgradeSeconds: 90,
     durationGrowth: 1.2,
+    capacityPerLevel: 0,
+  },
+  goldmine: {
+    key: "goldmine",
+    name: "Goldmine",
+    maxLevel: 20,
+    produces: "gold",
+    baseProductionPerSecond: 0.3,
+    baseCost: { wood: 110, stone: 70, gold: 15 },
+    costGrowth: 1.18,
+    baseUpgradeSeconds: 70,
+    durationGrowth: 1.18,
+    capacityPerLevel: 0,
+  },
+  hospital: {
+    key: "hospital",
+    name: "Hospital",
+    maxLevel: 20,
+    produces: null,
+    baseProductionPerSecond: 0,
+    baseCost: { wood: 140, stone: 90, gold: 15 },
+    costGrowth: 1.2,
+    baseUpgradeSeconds: 80,
+    durationGrowth: 1.2,
+    capacityPerLevel: 50,
   },
 };
 

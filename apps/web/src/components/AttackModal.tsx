@@ -13,7 +13,8 @@ function formatDuration(totalSeconds: number): string {
 }
 
 export function AttackModal({
-  defenderName,
+  title,
+  confirmLabel = "Send Attack",
   troops,
   troopTypes,
   onConfirm,
@@ -21,7 +22,8 @@ export function AttackModal({
   isSubmitting,
   error,
 }: {
-  defenderName: string;
+  title: string;
+  confirmLabel?: string;
   troops: Troop[];
   troopTypes: TroopType[];
   onConfirm: (composition: Partial<Record<TroopKey, number>>) => void;
@@ -46,7 +48,7 @@ export function AttackModal({
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black/60" onClick={onClose}>
       <div className="w-80 rounded-xl bg-slate-900 p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
-        <h2 className="text-lg font-semibold">Attack {defenderName}</h2>
+        <h2 className="text-lg font-semibold">{title}</h2>
 
         {available.length === 0 ? (
           <p className="mt-3 text-sm text-slate-400">
@@ -88,7 +90,7 @@ export function AttackModal({
           disabled={isSubmitting || totalSelected === 0}
           className="mt-4 w-full rounded-lg bg-red-700 py-2 font-medium hover:bg-red-600 disabled:opacity-50"
         >
-          {isSubmitting ? "Sending…" : "Send Attack"}
+          {isSubmitting ? "Sending…" : confirmLabel}
         </button>
         <button onClick={onClose} className="mt-2 w-full rounded-lg bg-slate-800 py-2 text-sm">
           Cancel
